@@ -1,0 +1,12 @@
+#!/bin/bash
+
+TEST=$1
+mkdir -p testrun
+rm -r "testrun/$TEST"
+mkdir "testrun/$TEST"
+
+export TESTDATADIR=testrun/$TEST/data
+export TESTLOGDIR=testrun/$TEST/log
+
+shift
+exec $@
