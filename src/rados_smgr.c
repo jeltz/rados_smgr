@@ -23,6 +23,7 @@ static char *rados_id = "";
 static char *rados_mon_host = "";
 static char *rados_keyring = "";
 static char *rados_pool = "";
+static int rados_debug_ms = 0;
 
 static rados_t cluster;
 static rados_ioctx_t io;
@@ -61,6 +62,21 @@ rados_smgr_init(void)
 	err = rados_conf_set(cluster, "keyring", rados_keyring);
 	if (err < 0)
 		elog(ERROR, "cannot set \"%s\": %s", "keyring", strerror(-err));
+
+	if (rados_debug_ms > 0)
+	{
+		char		buf[MAXINT8LEN + 1];
+
+		pg_lltoa(rados_debug_ms, buf);
+
+		err = rados_conf_set(cluster, "log_to_stderr", "1");
+		if (err < 0)
+			elog(ERROR, "cannot set \"%s\": %s", "log_to_stderr", strerror(-err));
+
+		err = rados_conf_set(cluster, "debug_ms", buf);
+		if (err < 0)
+			elog(ERROR, "cannot set \"%s\": %s", "debug_ms", strerror(-err));
+	}
 
 	err = rados_connect(cluster);
 	if (err < 0)
@@ -520,4 +536,16 @@ _PG_init(void)
 							   NULL,
 							   NULL,
 							   NULL);
+
+	DefineCustomIntVariable("rados_smgr.debug_ms",
+							"Value of debug_ms for librados",
+							"0 disables logging plans. 20 means print everything.",
+							&rados_debug_ms,
+							0,
+							0, 20,
+							PGC_POSTMASTER,
+							0,
+							NULL,
+							NULL,
+							NULL);
 }
